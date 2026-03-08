@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Tonal Studio</title>
+    <style>
+        body, html {
+            margin: 0; padding: 0; height: 100%;
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            background-color: #000; color: white;
+            overflow: hidden;
+        }
+
+        /* START PAGE */
+        #start-page {
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            height: 100vh;
+            position: relative;
+            transition: transform 0.6s cubic-bezier(0.7, 0, 0.3, 1), opacity 0.5s;
+        }
+
+        .slide-out-left { transform: translateX(-100%); opacity: 0; }
+
+        /* LOGO: Positional Mapping + 3px Border */
+        .logo-icon {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            width: 80px; height: 80px;
+            border: 3px solid #fff; 
+            border-radius: 12px;
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(255,255,255,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .pulse { animation: pulse-kf 1.5s infinite ease-in-out; }
+        @keyframes pulse-kf {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(0.95); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .grid-sq { 
+            background-color: transparent;
+            transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
+        }
+
+        /* INPUT AREA */
+        .input-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        input[type="text"] {
+            padding: 15px; border-radius: 12px; 
+            border: 3px solid #fff; 
+            background: #000; color: #fff; font-size: 1.5rem;
+            width: 220px; text-align: center; margin-bottom: 20px;
+            outline: none; font-weight: 900;
+            text-transform: uppercase;
+        }
+
+        button {
+            padding: 12px 24px; border-radius: 12px; border: 3px solid #fff;
+            background: #fff; color: #000; font-weight: 900;
+            cursor: pointer; text-transform: uppercase; letter-spacing: 1px;
+            transition: transform 0.2s;
+        }
+        button:active { transform: scale(0.95); }
+
+        .picker-wrapper {
+            margin-top: 20px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+
+        .picker-circle {
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            border: 3px solid #fff;
+            overflow: hidden;
+            position: relative;
+        }
+
+        input[type="color"] {
+            position: absolute;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            appearance: none;
+            -webkit-appearance: none;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 0;
+        }
+
+        .picker-label { font-size: 0.7rem; font-weight: 900; color: #888; text-transform: uppercase; }
+        .tip { margin-top: 15px; color: #444; font-size: 0.8rem; font-weight: 900; letter-spacing: 1px; }
+
+        /* BARS PAGE */
+        #bars-page {
+            display: none; flex-direction: column; height: 100vh;
+            position: absolute; top: 0; width: 100%;
+            transition: transform 0.6s cubic-bezier(0.7, 0, 0.3, 1);
+        }
+
+        .bar {
+            flex: 1; display: flex; align-items: center;
+            padding: 0 30px; font-weight: 900; font-size: 2.2rem;
+            letter-spacing: -1px; cursor: pointer;
+            border: none;
+            -webkit-text-stroke: 1.8px #fff;
+            text-shadow: 0 0 12px rgba(255,255,255,0.4);
+            paint-order: stroke fill;
+            /* Animation for entry */
+            transform: translateX(100%);
+            animation: slideInBar 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+        }
+
+        @keyframes slideInBar {
+            to { transform: translateX(0); }
+        }
+
+        /* TOAST POPUP */
+        #copy-toast {
+            position: fixed;
+            bottom: -60px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #fff;
+            color: #000;
+            padding: 12px 30px;
+            border-radius: 50px;
+            font-weight: 900;
+            font-size: 0.9rem;
+            transition: bottom 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+            z-index: 1000;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        #copy-toast.show { bottom: 40px; }
+
+        .controls-footer {
+            position: fixed; bottom: 20px; right: 20px;
+            display: flex; gap: 10px; z-index: 100;
+        }
+
+        .nav-btn {
+            background: #000; color: #fff; border: 3px solid #fff;
+            padding: 12px 24px; border-radius: 50px;
+            cursor: pointer; font-weight: 900; text-transform: uppercase;
+            transition: transform 0.2s, background 0.2s;
+        }
+        .nav-btn:hover { transform: translateY(-2px); }
+        .nav-btn:active { transform: translateY(0); }
+        
+        .nav-btn.hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <div id="start-page">
+        <div class="logo-icon" id="dynamicLogo">
+            <div class="grid-sq"></div> <div class="grid-sq"></div> <div class="grid-sq"></div>
+            <div class="grid-sq"></div> <div class="grid-sq"></div> <div class="grid-sq"></div>
+            <div class="grid-sq"></div> <div class="grid-sq"></div> <div class="grid-sq"></div>
+        </div>
+
+        <div class="input-container">
+            <input type="text" id="hexInput" placeholder="#HEX" maxlength="7" 
+                   oninput="handleInput(this)"
+                   onpaste="setTimeout(() => handleInput(this), 0)">
+            <button onclick="generateTones()">Generate</button>
+            
+            <div class="picker-wrapper" onclick="document.getElementById('colorPicker').click()">
+                <div class="picker-circle">
+                    <input type="color" id="colorPicker" oninput="syncPicker(this.value)">
+                </div>
+                <span class="picker-label">Picker</span>
+            </div>
+
+            <div class="tip">SPACE = RANDOM | ENTER = GO</div>
+        </div>
+    </div>
+
+    <div id="bars-page">
+        <div id="bar-container" style="display: contents;"></div>
+    </div>
+
+    <div id="copy-toast">COPIED TO CLIPBOARD</div>
+
+    <div class="controls-footer">
+        <div class="nav-btn hidden" id="newBtn" onclick="resetUI()">New</div>
+    </div>
+
+    <script>
+        const startPage = document.getElementById('start-page');
+        const barsPage = document.getElementById('bars-page');
+        const inputEl = document.getElementById('hexInput');
+        const logoEl = document.getElementById('dynamicLogo');
+        const pickerEl = document.getElementById('colorPicker');
+        const newBtn = document.getElementById('newBtn');
+        const toast = document.getElementById('copy-toast');
+
+        window.addEventListener('keydown', (e) => {
+            if (startPage.style.display !== 'none') {
+                if (e.key === 'Enter') generateTones();
+                else if (e.code === 'Space') {
+                    e.preventDefault();
+                    const rand = '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0').toUpperCase();
+                    syncPicker(rand);
+                }
+            }
+        });
+
+        function syncPicker(hex) {
+            inputEl.value = hex.toUpperCase();
+            handleInput(inputEl);
+        }
+
+        function handleInput(el) {
+            let val = el.value.toUpperCase().replace(/[^0-9A-F#]/g, '');
+            if (val.length > 0 && !val.startsWith('#')) val = '#' + val;
+            if (val.split('#').length > 2) val = '#' + val.replace(/#/g, '');
+            el.value = val;
+
+            const cleanHex = val.replace('#', '');
+            
+            if (cleanHex.length === 3 || cleanHex.length === 6) {
+                logoEl.classList.remove('pulse');
+                const fullHex = expandHex(val.startsWith('#') ? val : '#' + val);
+                updateLogoPositional(fullHex);
+                pickerEl.value = fullHex;
+            } else if (cleanHex.length > 0) {
+                logoEl.classList.add('pulse');
+            } else {
+                logoEl.classList.remove('pulse');
+                resetLogo();
+            }
+        }
+
+        function updateLogoPositional(hex) {
+            const lum = getLuminance(hex);
+            const targetIndex = Math.min(8, Math.max(0, Math.floor(lum * 9)));
+            const squares = document.querySelectorAll('.grid-sq');
+            
+            squares.forEach((sq, i) => {
+                if (i === targetIndex) {
+                    sq.style.backgroundColor = hex;
+                } else if (i < targetIndex) {
+                    const factor = 1 - (i / targetIndex);
+                    sq.style.backgroundColor = lerpColor(hex, "#000000", factor);
+                } else {
+                    const factor = (i - targetIndex) / (8 - targetIndex);
+                    sq.style.backgroundColor = lerpColor(hex, "#FFFFFF", factor);
+                }
+            });
+        }
+
+        function resetLogo() {
+            document.querySelectorAll('.grid-sq').forEach(sq => sq.style.backgroundColor = 'transparent');
+        }
+
+        function expandHex(hex) {
+            if (hex.length === 4) return '#' + hex[1] + hex[1] + hex[2] + hex[2] + hex[3] + hex[3];
+            return hex;
+        }
+
+        function getLuminance(hex) {
+            const r = parseInt(hex.slice(1, 3), 16) / 255;
+            const g = parseInt(hex.slice(3, 5), 16) / 255;
+            const b = parseInt(hex.slice(5, 7), 16) / 255;
+            return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+        }
+
+        function lerpColor(color1, color2, factor) {
+            const r1 = parseInt(color1.slice(1, 3), 16), g1 = parseInt(color1.slice(3, 5), 16), b1 = parseInt(color1.slice(5, 7), 16);
+            const r2 = parseInt(color2.slice(1, 3), 16), g2 = parseInt(color2.slice(3, 5), 16), b2 = parseInt(color2.slice(5, 7), 16);
+            const r = Math.round(r1 + factor * (r2 - r1)), g = Math.round(g1 + factor * (g2 - g1)), b = Math.round(b1 + factor * (b2 - b1));
+            return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase()}`;
+        }
+
+        function showToast() {
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2000);
+        }
+
+        function generateTones() {
+            let inputVal = inputEl.value.trim();
+            if (!/^#?([0-9A-F]{3}|[0-9A-F]{6})$/i.test(inputVal)) return;
+
+            const hex = expandHex(inputVal.startsWith('#') ? inputVal : '#' + inputVal);
+            const lum = getLuminance(hex);
+            const targetTone = Math.round(lum * 10) * 10;
+            const container = document.getElementById('bar-container');
+            const palette = [];
+            
+            for (let i = 0; i <= 100; i += 10) {
+                let color;
+                if (i < targetTone) color = lerpColor("#000000", hex, i / targetTone);
+                else if (i > targetTone) color = lerpColor(hex, "#FFFFFF", (i - targetTone) / (100 - targetTone));
+                else color = hex;
+                palette.push(color);
+            }
+
+            container.innerHTML = '';
+            palette.forEach((color, i) => {
+                const bar = document.createElement('div');
+                bar.className = 'bar';
+                bar.style.backgroundColor = color;
+                
+                // Stagger the animation delay
+                bar.style.animationDelay = `${i * 0.04}s`;
+
+                let textColor = palette[palette.length - 1 - i];
+                if (Math.abs(getLuminance(color) - getLuminance(textColor)) < 0.15) {
+                    textColor = getLuminance(color) > 0.5 ? "#000000" : "#FFFFFF";
+                }
+                bar.style.color = textColor;
+                bar.innerHTML = `<span>${color}</span>`;
+                
+                bar.onclick = () => {
+                    const textArea = document.createElement("textarea");
+                    textArea.value = color;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand("copy");
+                    document.body.removeChild(textArea);
+                    showToast();
+                };
+                container.appendChild(bar);
+            });
+
+            startPage.classList.add('slide-out-left');
+            setTimeout(() => {
+                startPage.style.display = 'none';
+                barsPage.style.display = 'flex';
+                newBtn.classList.remove('hidden');
+            }, 600);
+        }
+
+        function resetUI() {
+            barsPage.style.transform = "translateX(100%)";
+            setTimeout(() => {
+                barsPage.style.display = 'none';
+                barsPage.style.transform = "translateX(0)";
+                startPage.style.display = 'flex';
+                // Trigger reflow to restart animation if needed
+                void startPage.offsetWidth;
+                startPage.classList.remove('slide-out-left');
+                newBtn.classList.add('hidden');
+                inputEl.value = '';
+                pickerEl.value = '#000000';
+                logoEl.classList.remove('pulse');
+                resetLogo();
+            }, 600);
+        }
+    </script>
+</body>
+</html>
