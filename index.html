@@ -211,6 +211,23 @@
         const newBtn = document.getElementById('newBtn');
         const toast = document.getElementById('copy-toast');
 
+        // --- DYNAMIC FAVICON LOGIC ---
+        function updateFavicon(color) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 32; canvas.height = 32;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.roundRect(0, 0, 32, 32, 8); // Matches your logo radius
+            ctx.fill();
+            
+            const link = document.querySelector("link[rel*='icon']") || document.createElement('link');
+            link.type = 'image/x-icon';
+            link.rel = 'shortcut icon';
+            link.href = canvas.toDataURL("image/x-icon");
+            document.getElementsByTagName('head')[0].appendChild(link);
+        }
+
         window.addEventListener('keydown', (e) => {
             if (startPage.style.display !== 'none') {
                 if (e.key === 'Enter') generateTones();
@@ -240,6 +257,7 @@
                 const fullHex = expandHex(val.startsWith('#') ? val : '#' + val);
                 updateLogoPositional(fullHex);
                 pickerEl.value = fullHex;
+                updateFavicon(fullHex); // Update tab icon
             } else if (cleanHex.length > 0) {
                 logoEl.classList.add('pulse');
             } else {
@@ -354,7 +372,6 @@
                 barsPage.style.display = 'none';
                 barsPage.style.transform = "translateX(0)";
                 startPage.style.display = 'flex';
-                // Trigger reflow to restart animation if needed
                 void startPage.offsetWidth;
                 startPage.classList.remove('slide-out-left');
                 newBtn.classList.add('hidden');
