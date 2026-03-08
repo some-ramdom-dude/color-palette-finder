@@ -211,16 +211,33 @@
         const newBtn = document.getElementById('newBtn');
         const toast = document.getElementById('copy-toast');
 
-        // --- DYNAMIC FAVICON LOGIC ---
-        function updateFavicon(color) {
+        // --- GRID-STYLE FAVICON LOGIC ---
+        function updateFavicon(hex) {
             const canvas = document.createElement('canvas');
-            canvas.width = 32; canvas.height = 32;
+            canvas.width = 64; canvas.height = 64;
             const ctx = canvas.getContext('2d');
-            ctx.fillStyle = color;
-            ctx.beginPath();
-            ctx.roundRect(0, 0, 32, 32, 8); // Matches your logo radius
-            ctx.fill();
             
+            const lum = getLuminance(hex);
+            const targetIndex = Math.min(8, Math.max(0, Math.floor(lum * 9)));
+            const size = 64 / 3;
+
+            // Draw the 3x3 grid matching the logo logic
+            for (let i = 0; i < 9; i++) {
+                let color;
+                if (i === targetIndex) {
+                    color = hex;
+                } else if (i < targetIndex) {
+                    const factor = 1 - (i / targetIndex);
+                    color = lerpColor(hex, "#000000", factor);
+                } else {
+                    const factor = (i - targetIndex) / (8 - targetIndex);
+                    color = lerpColor(hex, "#FFFFFF", factor);
+                }
+                
+                ctx.fillStyle = color;
+                ctx.fillRect((i % 3) * size, Math.floor(i / 3) * size, size, size);
+            }
+
             const link = document.querySelector("link[rel*='icon']") || document.createElement('link');
             link.type = 'image/x-icon';
             link.rel = 'shortcut icon';
@@ -257,7 +274,7 @@
                 const fullHex = expandHex(val.startsWith('#') ? val : '#' + val);
                 updateLogoPositional(fullHex);
                 pickerEl.value = fullHex;
-                updateFavicon(fullHex); // Update tab icon
+                updateFavicon(fullHex); // Sync favicon grid
             } else if (cleanHex.length > 0) {
                 logoEl.classList.add('pulse');
             } else {
